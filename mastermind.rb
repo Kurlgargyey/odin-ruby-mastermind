@@ -3,7 +3,33 @@
 # this class will mediate between the two players
 class Game
   def initialize
+    @user = User.new
+    @computer = Computer.new
+    decide_role
+  end
 
+  private
+
+  def decide_role_prompt
+    ans = ''
+    until %w[Y N].include?(ans)
+      puts 'Do you want to be the codemaker? Y/N'
+      ans = gets.chomp.upcase
+    end
+    ans
+  end
+
+  def decide_role
+    ans = decide_role_prompt
+    if ans == 'Y'
+      puts 'Great!'
+      @codemaker = @user
+      @codebreaker = @computer
+    else
+      puts 'Alright, the computer will set a code.'
+      @codebreaker = @user
+      @codemaker = @computer
+    end
   end
 end
 
@@ -26,9 +52,10 @@ end
 class User < Player
   attr_reader :name
 
-  def initialize(name, points = 0)
+  def initialize(points = 0)
     super(points)
-    @name = name
+    puts 'What is your name?'
+    @name = gets.chomp
   end
 
   def guess!
@@ -46,7 +73,7 @@ class User < Player
   private
 
   def validate(string)
-    string.length == code_length && string.chars.all? { |char| legal_colors.any?(char) }
+    string.length == code_length && string.chars.all? { |char| legal_colors.include?(char) }
   end
 
   def repeat_prompt(type)
@@ -76,19 +103,26 @@ end
 
 # computer-controlled player behavior
 class Computer < Player
-  def guess!
-    puts 'The computer is making a guess...'
-    self.guess = +''
-    4.times { @guess += legal_colors.sample }
-    guess
+  attr_reader :name
+
+  def initialize(points = 0)
+    super(points)
+    @name = 'Computer'
   end
 
   protected
 
+  def guess!
+    puts 'The computer is making a guess...'
+    guess = +''
+    4.times { guess += legal_colors.sample }
+    @guess = guess
+  end
+
   def code!
     puts 'The computer is setting a code...'
-    self.code = +''
-    4.times { @code += legal_colors.sample }
-    code
+    code = +''
+    4.times { code += legal_colors.sample }
+    @code = code
   end
 end
