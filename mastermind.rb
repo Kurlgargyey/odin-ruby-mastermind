@@ -8,6 +8,11 @@ class Game
     decide_role
   end
 
+  def game_loop
+    code = @codemaker.code!
+    process_round(code)
+  end
+
   private
 
   def decide_role_prompt
@@ -30,6 +35,12 @@ class Game
       @codebreaker = @user
       @codemaker = @computer
     end
+  end
+
+  def process_round(code)
+    guess = @codebreaker.guess!
+    hints = @codemaker.process_guess(code, guess)
+    puts "The guess got #{hints[0]} places right. #{hints[1]} colors were correct, but in the wrong place."
   end
 end
 
