@@ -2,15 +2,21 @@
 
 # this class will mediate between the two players
 class Game
+  @@scores = Hash.new(0)
+
   def initialize
     @user = User.new
     @computer = Computer.new
+    @guesses = 0
+    @max_guesses = 10
     decide_role
   end
 
-  def game_loop
-    code = @codemaker.code!
-    process_round(code)
+  def run_game
+    @codemaker.code!
+    game_loop
+    puts "The game ended at round #{@guesses}!"
+    puts "The scores are: #{@@scores[@codemaker.name]} to #{@@scores[@codebreaker.name]}."
   end
 
   private
@@ -37,16 +43,43 @@ class Game
     end
   end
 
-  def process_round(code)
+  def process_round
     guess = @codebreaker.guess!
-    hints = @codemaker.process_guess(code, guess)
+    hints = @codemaker.process_guess(guess)
     puts "The guess got #{hints[0]} places right. #{hints[1]} colors were correct, but in the wrong place."
+    return true if hints[0] == @codemaker.code_length
+
+    @guesses += 1
+    false
+  end
+
+  def game_over(state)
+    case state
+    when 1
+      puts 'The code was broken!'
+      @@scores[@codemaker.name] += @guesses
+    when 0
+      puts 'The code held up!'
+      @@scores[@codemaker.name] += (@guesses + 1)
+    end
+  end
+
+  def game_loop
+    loop do
+      if process_round
+        game_over(1)
+        break
+      elsif @guesses == @max_guesses
+        game_over(0)
+        break
+      end
+    end
   end
 end
 
 # shared behavior/states for player class
 class Player
-  attr_reader :points, :guess, :code_length, :legal_colors
+  attr_reader :points, :guess, :code_length, :legal_colors, :name
 
   def initialize(points = 0)
     @points = points
@@ -54,15 +87,41 @@ class Player
     @legal_colors = %w[R O Y G B I V X]
   end
 
+  def process_guess(guess)
+    hits = 0
+    hints = 0
+    code = @code.clone
+    guess.each do |guess_idx|
+      code.each do |code_idx|
+        if guess_idx == code_idx
+          hits += 1
+          code.delete(code_idx)
+        elsif guess_idx[0] == code_idx[0]
+          hints += 1
+          code.delete(code_idx)
+        end
+      end
+    end
+    [hits, hints]
+  end
+
   protected
 
   attr_reader :code
+
+  private
+
+  def char_idx_array(string)
+    array = []
+    string.each_char.with_index do |char, idx|
+      array.push([char, idx])
+    end
+    array
+  end
 end
 
 # handling of user input for user-controlled player
 class User < Player
-  attr_reader :name
-
   def initialize(points = 0)
     super(points)
     puts 'What is your name?'
@@ -95,7 +154,7 @@ class User < Player
 
   def guess=(string)
     if validate(string)
-      @guess = string
+      @guess = char_idx_array(string)
     else
       repeat_prompt('guess')
       guess!
@@ -104,7 +163,7 @@ class User < Player
 
   def code=(string)
     if validate(string)
-      @code = string
+      @code = char_idx_array(string)
     else
       repeat_prompt('code')
       code!
@@ -114,26 +173,27 @@ end
 
 # computer-controlled player behavior
 class Computer < Player
-  attr_reader :name
-
   def initialize(points = 0)
     super(points)
     @name = 'Computer'
   end
 
-  protected
-
   def guess!
     puts 'The computer is making a guess...'
     guess = +''
     4.times { guess += legal_colors.sample }
-    @guess = guess
+    sleep 2
+    puts "The computer guessed #{guess}."
+    @guess = char_idx_array(guess)
   end
 
   def code!
     puts 'The computer is setting a code...'
     code = +''
     4.times { code += legal_colors.sample }
-    @code = code
+    @code = char_idx_array(code)
   end
 end
+
+game = Game.new
+game.run_game
