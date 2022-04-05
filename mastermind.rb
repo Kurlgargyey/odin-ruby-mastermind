@@ -95,7 +95,7 @@ class Player
 
   def initialize(points = 0)
     @points = points
-    @code_length = 4
+    @code_length = 3
     @legal_colors = %w[R O Y G B I V X]
   end
 
@@ -103,17 +103,8 @@ class Player
     hits = 0
     hints = 0
     code = @code.clone
-    guess.each do |guess_idx|
-      code.each do |code_idx|
-        if guess_idx == code_idx
-          hits += 1
-          code.delete(code_idx)
-        elsif guess_idx[0] == code_idx[0]
-          hints += 1
-          code.delete(code_idx)
-        end
-      end
-    end
+    hits = code.intersection(guess).length
+    hints = check_partials(code, guess)
     [hits, hints]
   end
 
@@ -122,6 +113,21 @@ class Player
   attr_reader :code
 
   private
+
+  def check_partials(code, guess)
+    hints = 0
+    code -= guess
+    guess -= @code
+    guess.each do |guess_idx|
+      code.each do |code_idx|
+        if guess_idx[0] == code_idx[0]
+          hints += 1
+          code.delete(code_idx)
+        end
+      end
+    end
+    hints
+  end
 
   def char_idx_array(string)
     array = []
@@ -193,7 +199,7 @@ class Computer < Player
   def guess!
     puts 'The computer is making a guess...'
     guess = +''
-    4.times { guess += legal_colors.sample }
+    code_length.times { guess += legal_colors.sample }
     sleep 2
     puts "The computer guessed #{guess}."
     @guess = char_idx_array(guess)
@@ -202,7 +208,7 @@ class Computer < Player
   def code!
     puts 'The computer is setting a code...'
     code = +''
-    4.times { code += legal_colors.sample }
+    code_length.times { code += legal_colors.sample }
     @code = char_idx_array(code)
   end
 end
