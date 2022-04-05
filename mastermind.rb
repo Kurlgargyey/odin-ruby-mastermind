@@ -17,7 +17,7 @@ class Game
     @codemaker.code!
     game_loop
     puts "The game ended at round #{@guesses}!"
-    puts "The scores are: #{@@scores[@codemaker.name]} to #{@@scores[@codebreaker.name]}."
+    puts scores
     reinitialize
   end
 
@@ -60,6 +60,12 @@ class Game
       puts 'The code held up!'
       @@scores[@codemaker.name] += (@guesses + 1)
     end
+  end
+
+  def scores
+    codebreaker_score = "#{@@scores[@codebreaker.name]} for #{@codebreaker.name}"
+    codemaker_score = "#{@@scores[@codemaker.name]} for #{@codemaker.name}"
+    "The scores are #{codemaker_score} and #{codebreaker_score}."
   end
 
   def game_loop
