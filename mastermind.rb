@@ -7,8 +7,9 @@ class Game
   def initialize
     @user = User.new
     @computer = Computer.new
-    @guesses = 0
     @max_guesses = 10
+    @guesses = 0
+    puts 'Do you want to be the codemaker? Y/N'
     decide_role
   end
 
@@ -17,21 +18,18 @@ class Game
     game_loop
     puts "The game ended at round #{@guesses}!"
     puts "The scores are: #{@@scores[@codemaker.name]} to #{@@scores[@codebreaker.name]}."
+    reinitialize
   end
 
   private
 
-  def decide_role_prompt
-    ans = ''
-    until %w[Y N].include?(ans)
-      puts 'Do you want to be the codemaker? Y/N'
-      ans = gets.chomp.upcase
-    end
+  def yes_no_prompt
+    ans = gets.chomp.upcase until %w[Y N].include?(ans)
     ans
   end
 
   def decide_role
-    ans = decide_role_prompt
+    ans = yes_no_prompt
     if ans == 'Y'
       puts 'Great!'
       @codemaker = @user
@@ -73,6 +71,20 @@ class Game
         game_over(0)
         break
       end
+    end
+  end
+
+  def reinitialize
+    puts 'Would you like to play again? Y/N'
+    ans = yes_no_prompt
+    if ans == 'Y'
+      puts 'Reinitializing game...'
+      @guesses = 0
+      @codemaker, @codebreaker = @codebreaker, @codemaker
+      run_game
+    else
+      puts 'OK, have a nice day!'
+      sleep 2
     end
   end
 end
