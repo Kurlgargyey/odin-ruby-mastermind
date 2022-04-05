@@ -106,8 +106,6 @@ class Player
   end
 
   def process_guess(guess)
-    hits = 0
-    hints = 0
     code = @code.clone
     hits = code.intersection(guess).length
     hints = check_partials(code, guess)
