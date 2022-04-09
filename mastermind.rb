@@ -48,6 +48,7 @@ class Game
     return true if hints[0] == @codemaker.code_length
 
     @guesses += 1
+    @codebreaker.optimize_guess(guess, @codemaker) if @codebreaker.name == 'Computer'
     false
   end
 
@@ -87,6 +88,7 @@ class Game
       puts 'Reinitializing game...'
       @guesses = 0
       @codemaker, @codebreaker = @codebreaker, @codemaker
+      @codebreaker.reset_perms if @codebreaker.name == 'Computer'
       run_game
     else
       puts 'OK, have a nice day!'
@@ -97,13 +99,20 @@ end
 
 # shared behavior/states for player class
 class Player
-  attr_reader :points, :guess, :code_length, :legal_colors, :name
+  attr_reader :guess, :name
 
-  def initialize(points = 0)
-    @points = points
-    @code_length = 3
-    @legal_colors = %w[R O Y G B I V X]
+  @@code_length = 3
+  @@legal_colors = %w[R O Y G B I V X]
+
+  def code_length
+    @@code_length
   end
+
+  def legal_colors
+    @@legal_colors
+  end
+
+  def initialize; end
 
   def process_guess(guess)
     code = @code.clone
@@ -144,8 +153,8 @@ end
 
 # handling of user input for user-controlled player
 class User < Player
-  def initialize(points = 0)
-    super(points)
+  def initialize
+    super
     puts 'What is your name?'
     @name = gets.chomp
   end
@@ -195,25 +204,39 @@ end
 
 # computer-controlled player behavior
 class Computer < Player
-  def initialize(points = 0)
-    super(points)
+  def initialize
+    super
     @name = 'Computer'
+    @perms = []
+    legal_colors.permutation(code_length) { |perm| @perms.push(perm) }
+  end
+
+  def reset_perms
+    @perms = []
+    legal_colors.permutation(code_length) { |perm| @perms.push(perm) }
   end
 
   def guess!
     puts 'The computer is making a guess...'
-    guess = +''
-    code_length.times { guess += legal_colors.sample }
+    # guess = +''
+    # code_length.times { guess += legal_colors.sample }
+    guess_string = @perms.sample.sum('')
     sleep 2
-    puts "The computer guessed #{guess}."
-    @guess = char_idx_array(guess)
+    puts "The computer guessed #{guess_string}."
+    @guess = char_idx_array(guess_string)
   end
 
   def code!
     puts 'The computer is setting a code...'
-    code = +''
-    code_length.times { code += legal_colors.sample }
-    @code = char_idx_array(code)
+    code_string = +''
+    code_length.times { code_string += legal_colors.sample }
+    @code = char_idx_array(code_string)
+  end
+
+  def optimize_guess(guess, player)
+    @perms.reject! do |perm|
+      player.process_guess(guess) == player.process_guess(char_idx_array(perm.sum('')))
+    end
   end
 end
 
